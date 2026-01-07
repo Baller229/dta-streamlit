@@ -1,6 +1,8 @@
 # app.py
 from __future__ import annotations
 
+import io
+from datetime import datetime
 import streamlit as st
 import pandas as pd
 
@@ -18,6 +20,58 @@ from helpers_charts import (
     compute_cellid_mixing_for_heatmaps,
     plot_cellid_mixing_heatmaps,
 )
+
+
+def _export_figure_buttons(fig, base_name: str, key_prefix: str):
+    """
+    Renderuje download buttons pre SVG/PNG/PDF pre matplotlib fig.
+    base_name: napr. "graf_1_qual_rtt"
+    key_prefix: unikátny prefix na Streamlit key (napr. "g1")
+    """
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    fname = f"{base_name}_{ts}"
+
+    c1, c2, c3 = st.columns(3)
+
+    # SVG
+    svg_buf = io.BytesIO()
+    fig.savefig(svg_buf, format="svg", bbox_inches="tight")
+    svg_buf.seek(0)
+    with c1:
+        st.download_button(
+            label="Export to SVG",
+            data=svg_buf,
+            file_name=f"{fname}.svg",
+            mime="image/svg+xml",
+            key=f"{key_prefix}_dl_svg",
+        )
+
+    # PNG
+    png_buf = io.BytesIO()
+    fig.savefig(png_buf, format="png", dpi=300, bbox_inches="tight")
+    png_buf.seek(0)
+    with c2:
+        st.download_button(
+            label="Export to PNG",
+            data=png_buf,
+            file_name=f"{fname}.png",
+            mime="image/png",
+            key=f"{key_prefix}_dl_png",
+        )
+
+    # PDF
+    pdf_buf = io.BytesIO()
+    fig.savefig(pdf_buf, format="pdf", bbox_inches="tight")
+    pdf_buf.seek(0)
+    with c3:
+        st.download_button(
+            label="Export to PDF",
+            data=pdf_buf,
+            file_name=f"{fname}.pdf",
+            mime="application/pdf",
+            key=f"{key_prefix}_dl_pdf",
+        )
+
 
 st.set_page_config(page_title="Drive-test grafy", layout="wide")
 st.title("Drive-test grafy (CSV upload)")
@@ -105,6 +159,8 @@ if st.button("Vykresliť graf 1", key="btn_g1"):
             color_rtt=g1_color_rtt,
         )
         st.pyplot(fig, use_container_width=True)
+        _export_figure_buttons(
+            fig, base_name="graf_1_qual_rtt_overlaid", key_prefix="g1")
     except Exception as e:
         st.error(f"Chyba pri kreslení Graf 1: {e}")
 
@@ -192,6 +248,9 @@ if st.button("Vykresliť graf 2", key="btn_g2"):
             color_ctrl=g2_color_ctrl,
         )
         st.pyplot(fig, use_container_width=True)
+        _export_figure_buttons(
+            fig, base_name="graf_2_rtt_around_ho", key_prefix="g2")
+
     except Exception as e:
         st.error(f"Chyba pri kreslení Graf 2: {e}")
 
@@ -281,6 +340,8 @@ if st.button("Vykresliť graf 3", key="btn_g3"):
             cmap=g3_cmap,
         )
         st.pyplot(fig, use_container_width=True)
+        _export_figure_buttons(
+            fig, base_name="graf_3_rtt_outliers_heatmap", key_prefix="g3")
 
     except Exception as e:
         st.error(f"Chyba pri kreslení Graf 3: {e}")
@@ -369,6 +430,8 @@ if st.button("Vykresliť graf 4", key="btn_g4"):
             vmax=vmax_arg,
         )
         st.pyplot(fig, use_container_width=True)
+        _export_figure_buttons(
+            fig, base_name="graf_4_handover_rate_heatmap", key_prefix="g4")
 
     except Exception as e:
         st.error(f"Chyba pri kreslení Graf 4: {e}")
@@ -458,10 +521,8 @@ if st.button("Vykresliť graf 5", key="btn_g5"):
         )
 
         st.pyplot(fig, use_container_width=True)
-
-        # (voliteľné) ak chceš vidieť ako sa biny naplnili:
-        # with st.expander("Bin info", expanded=False):
-        #     st.dataframe(bin_info, use_container_width=True)
+        _export_figure_buttons(
+            fig, base_name="graf_5_rtt_vs_handover_binned_box", key_prefix="g5")
 
     except Exception as e:
         st.error(f"Chyba pri kreslení Graf 5: {e}")
@@ -551,6 +612,9 @@ if st.button("Vykresliť graf 6", key="btn_g6"):
             out_iqr_factor=float(g6_out_iqr_factor),
         )
         st.pyplot(fig, use_container_width=True)
+        _export_figure_buttons(
+            fig, base_name="graf_6_rtt_boxplots_by_direction_and_bucket", key_prefix="g6")
+
     except Exception as e:
         st.error(f"Chyba pri kreslení Graf 6: {e}")
 
@@ -646,6 +710,9 @@ if st.button("Vykresliť graf 7", key="btn_g7"):
         )
 
         st.pyplot(fig, use_container_width=True)
+        _export_figure_buttons(
+            fig, base_name="graf_7_rtt_outlier_cloud_by_direction", key_prefix="g7")
+
     except Exception as e:
         st.error(f"Chyba pri kreslení Graf 7: {e}")
 
@@ -755,5 +822,8 @@ if st.button("Vykresliť graf – CellID mixing", key="btn_g8"):
         )
 
         st.pyplot(fig, use_container_width=True)
+        _export_figure_buttons(
+            fig, base_name="graf_8_cellid_mixing_heatmaps", key_prefix="g8")
+
     except Exception as e:
         st.error(f"Chyba pri kreslení CellID mixing heatmaps: {e}")
