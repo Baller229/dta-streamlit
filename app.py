@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import io
 from datetime import datetime
+
 import streamlit as st
 import pandas as pd
 
@@ -20,6 +21,8 @@ from helpers_charts import (
     compute_cellid_mixing_for_heatmaps,
     plot_cellid_mixing_heatmaps,
 )
+
+DEFAULT_CSV_PATH = "dta.csv"
 
 
 def _export_figure_buttons(fig, base_name: str, key_prefix: str):
@@ -73,19 +76,44 @@ def _export_figure_buttons(fig, base_name: str, key_prefix: str):
         )
 
 
+@st.cache_data
+def _load_csv_from_path(path: str) -> pd.DataFrame:
+    return pd.read_csv(path)
+
+
+@st.cache_data
+def _load_csv_from_upload(uploaded_file) -> pd.DataFrame:
+    return pd.read_csv(uploaded_file)
+
+
 st.set_page_config(page_title="Drive-test grafy", layout="wide")
 st.title("Drive-test grafy (CSV upload)")
 
-uploaded = st.file_uploader("Nahraj CSV", type=["csv"], key="csv_upload")
-if uploaded is None:
-    st.info("Nahraj CSV a potom pracuj s jednotlivými grafmi nižšie.")
-    st.stop()
+st.subheader("Vstupné dáta")
 
-try:
-    df = pd.read_csv(uploaded)
-except Exception as e:
-    st.error(f"Nepodarilo sa načítať CSV: {e}")
-    st.stop()
+uploaded = st.file_uploader(
+    "Nahraj vlastný CSV (voliteľné)",
+    type=["csv"],
+    key="csv_upload",
+)
+
+if uploaded is not None:
+    try:
+        df = _load_csv_from_upload(uploaded)
+        st.success("Použité: uploadnutý CSV súbor")
+    except Exception as e:
+        st.error(f"Nepodarilo sa načítať uploadnutý CSV: {e}")
+        st.stop()
+else:
+    try:
+        df = _load_csv_from_path(DEFAULT_CSV_PATH)
+        st.info(f"Použité: default CSV ({DEFAULT_CSV_PATH})")
+    except Exception as e:
+        st.error(
+            f"Nepodarilo sa načítať default CSV ({DEFAULT_CSV_PATH}). "
+            f"Pridaj ho vedľa app.py alebo nahraj CSV ručne.\n\n{e}"
+        )
+        st.stop()
 
 st.success(f"Načítané: {df.shape[0]:,} riadkov × {df.shape[1]} stĺpcov")
 
